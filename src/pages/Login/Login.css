@@ -78,3 +78,20 @@ button[type='submit']:disabled {
   background-color: #a5a4f3;
   cursor: not-allowed;
 }
+
+.link-alternativo {
+  margin-top: 20px;
+  margin-bottom: 0;
+  text-align: center;
+  font-size: 14px;
+}
+
+.link-alternativo a {
+  color: #4f46e5;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link-alternativo a:hover {
+  text-decoration: underline;
+}

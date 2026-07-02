@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage'
-import './Login.css'
+import '../Login/Login.css'
 
-export default function Login() {
-  const { login } = useAuth()
+export default function Register() {
+  const { registrar } = useAuth()
+  const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
@@ -16,9 +17,9 @@ export default function Login() {
     setErro('')
     setCarregando(true)
     try {
-      await login(email, senha)
+      await registrar(nome, email, senha)
     } catch (erro) {
-      setErro(erro.response?.data?.erro || 'Email ou senha inválidos')
+      setErro(erro.response?.data?.erro || 'Erro ao criar conta')
     } finally {
       setCarregando(false)
     }
@@ -28,9 +29,20 @@ export default function Login() {
     <div className="login-container">
       <div className="login-box">
         <h1>Personal Expenses</h1>
-        <p>Entre na sua conta</p>
+        <p>Crie sua conta</p>
 
         <form onSubmit={handleSubmit}>
+          <div className="campo">
+            <label>Nome</label>
+            <input
+              type="text"
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              placeholder="Seu nome"
+              required
+            />
+          </div>
+
           <div className="campo">
             <label>Email</label>
             <input
@@ -49,6 +61,7 @@ export default function Login() {
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
               placeholder="sua senha"
+              minLength={6}
               required
             />
           </div>
@@ -56,12 +69,12 @@ export default function Login() {
           <ErrorMessage mensagem={erro} />
 
           <button type="submit" disabled={carregando}>
-            {carregando ? 'Entrando...' : 'Entrar'}
+            {carregando ? 'Criando conta...' : 'Criar conta'}
           </button>
         </form>
 
         <p className="link-alternativo">
-          Não tem uma conta? <Link to="/register">Criar conta</Link>
+          Já tem uma conta? <Link to="/login">Entrar</Link>
         </p>
       </div>
     </div>

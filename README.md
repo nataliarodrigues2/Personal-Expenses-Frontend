@@ -1,16 +1,91 @@
-# React + Vite
+# Personal Expenses — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicação React (Vite) integrada à [Personal Expenses API](https://github.com/nataliarodrigues2/Personal-Expenses-API-final) para controle de despesas pessoais.
 
-Currently, two official plugins are available:
+## Tecnologias
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- React 19 + React Router DOM
+- Axios
+- Context API (autenticação / estado global)
+- Hooks customizados para acesso à API (`useCategorias`, `useDespesas`)
+- CSS puro (sem framework externo)
 
-## React Compiler
+## Estrutura
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```
+src/
+ ├── components/   # Navbar, Loading, ErrorMessage
+ ├── contexts/     # AuthContext (sessão do usuário)
+ ├── hooks/        # useAuth, useCategorias, useDespesas
+ ├── pages/        # Login, Register, Dashboard, Categorias, Despesas
+ ├── routes/       # AppRoutes (rotas públicas e protegidas)
+ └── services/     # api.js (instância axios + interceptors)
+```
 
-## Expanding the ESLint configuration
+## Como rodar o projeto completo (backend + frontend)
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### 1. Backend
+
+Clone e configure a API separadamente:
+
+```bash
+git clone https://github.com/nataliarodrigues2/Personal-Expenses-API-final.git
+cd Personal-Expenses-API-final
+npm install
+```
+
+Crie um banco MySQL chamado `personal_expenses`, copie `.env.example` para `.env` e preencha:
+
+```
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=sua_senha
+DB_NAME=personal_expenses
+DB_PORT=3306
+JWT_SECRET=sua_chave_secreta
+JWT_EXPIRES_IN=1d
+```
+
+Rode as migrations/seeders e suba o servidor:
+
+```bash
+npx sequelize-cli db:migrate
+npx sequelize-cli db:seed:all
+npm run dev
+```
+
+A API sobe em `http://localhost:3000` (porta fixa) com CORS liberado.
+
+### 2. Frontend (este repositório)
+
+```bash
+npm install
+```
+
+Configure o `.env` (já incluso, ignorado pelo git) apontando para a API:
+
+```
+VITE_API_URL=http://localhost:3000
+```
+
+Suba o servidor de desenvolvimento:
+
+```bash
+npm run dev
+```
+
+Acesse `http://localhost:5173`, crie uma conta em **Criar conta** (ou use um usuário já existente/seedado no backend) e faça login.
+
+## Scripts
+
+- `npm run dev` — inicia o servidor de desenvolvimento
+- `npm run build` — build de produção
+- `npm run lint` — checagem de lint
+- `npm run preview` — pré-visualiza o build de produção
+
+## Funcionalidades
+
+- **Autenticação**: login, cadastro, persistência de sessão (token + dados do usuário em `localStorage`) e logout. Requisições com token expirado/inválido (401) redirecionam automaticamente para o login.
+- **Dashboard**: total de gastos, quantidade de despesas, gastos por categoria e últimas despesas cadastradas.
+- **Categorias**: CRUD completo.
+- **Despesas**: CRUD completo com filtros por categoria, status, intervalo de data e faixa de valor.

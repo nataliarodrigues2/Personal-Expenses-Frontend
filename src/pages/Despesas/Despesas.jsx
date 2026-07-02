@@ -1,96 +1,93 @@
-import { useState, useEffect } from 'react'
-import { useAuth } from '../../contexts/AuthContext'
-import api from '../../services/api'
+import { useEffect, useState } from 'react'
+import Navbar from '../../components/Navbar/Navbar'
+import Loading from '../../components/Loading/Loading'
+import ErrorMessage from '../../components/ErrorMessage/ErrorMessage'
+import { useCategorias } from '../../hooks/useCategorias'
+import { useDespesas } from '../../hooks/useDespesas'
 import '../Dashboard/Dashboard.css'
 import '../Categorias/Categorias.css'
 import './Despesas.css'
 
-export default function Despesas() {
-  const { logout } = useAuth()
-  const [despesas, setDespesas] = useState([])
-  const [categorias, setCategorias] = useState([])
-  const [carregando, setCarregando] = useState(true)
-  const [erro, setErro] = useState('')
-  const [editandoId, setEditandoId] = useState(null)
+const FILTROS_INICIAIS = {
+  status: '',
+  categoryId: '',
+  dataInicio: '',
+  dataFim: '',
+  valueMin: '',
+  valueMax: '',
+}
 
-  const [filtroStatus, setFiltroStatus] = useState('')
-  const [filtroCategoria, setFiltroCategoria] = useState('')
-  const [filtroDataInicio, setFiltroDataInicio] = useState('')
-  const [filtroDataFim, setFiltroDataFim] = useState('')
+export default function Despesas() {
+  const { categorias } = useCategorias()
+  const { despesas, carregando, erro, setErro, buscar, criar, atualizar, remover, extrairErro } = useDespesas()
+  const [editandoId, setEditandoId] = useState(null)
+  const [salvando, setSalvando] = useState(false)
+
+  const [filtros, setFiltros] = useState(FILTROS_INICIAIS)
 
   const [descricao, setDescricao] = useState('')
   const [valor, setValor] = useState('')
   const [data, setData] = useState('')
   const [status, setStatus] = useState('PENDENTE')
-  const [categoriaId, setCategoriaId] = useState('')
+  const [categoryId, setCategoryId] = useState('')
 
   useEffect(() => {
-    carregarCategorias()
-    carregarDespesas()
+    buscar()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  async function carregarCategorias() {
-    try {
-      const resposta = await api.get('/categories')
-      setCategorias(resposta.data)
-    } catch {
-      console.error('Erro ao carregar categorias')
-    }
+  function aplicarFiltros() {
+    const params = {}
+    Object.entries(filtros).forEach(([chave, valor]) => {
+      if (valor) params[chave] = valor
+    })
+    buscar(params)
   }
 
-  async function carregarDespesas() {
-    setCarregando(true)
-    try {
-      const params = {}
-      if (filtroStatus) params.status = filtroStatus
-      if (filtroCategoria) params.categoriaId = filtroCategoria
-      if (filtroDataInicio) params.dataInicio = filtroDataInicio
-      if (filtroDataFim) params.dataFim = filtroDataFim
-
-      const resposta = await api.get('/expenses', { params })
-      setDespesas(resposta.data)
-    } catch {
-      setErro('Erro ao carregar despesas')
-    } finally {
-      setCarregando(false)
-    }
+  function limparFiltros() {
+    setFiltros(FILTROS_INICIAIS)
+    buscar()
   }
 
   async function handleSalvar() {
-    if (!descricao.trim() || !valor || !data || !categoriaId) {
+    if (!descricao.trim() || !valor || !data || !categoryId) {
       setErro('Todos os campos são obrigatórios')
       return
     }
     setErro('')
+    setSalvando(true)
+    const dados = { description: descricao, value: valor, date: data, status, categoryId }
     try {
       if (editandoId) {
-        await api.put(`/expenses/${editandoId}`, { descricao, valor, data, status, categoriaId })
+        await atualizar(editandoId, dados)
       } else {
-        await api.post('/expenses', { descricao, valor, data, status, categoriaId })
+        await criar(dados)
       }
       limparFormulario()
-      carregarDespesas()
-    } catch {
-      setErro('Erro ao salvar despesa')
+      aplicarFiltros()
+    } catch (erro) {
+      setErro(extrairErro(erro, 'Erro ao salvar despesa'))
+    } finally {
+      setSalvando(false)
     }
   }
 
   function handleEditar(despesa) {
     setEditandoId(despesa.id)
-    setDescricao(despesa.descricao)
-    setValor(despesa.valor)
-    setData(despesa.data)
+    setDescricao(despesa.description)
+    setValor(despesa.value)
+    setData(despesa.date)
     setStatus(despesa.status)
-    setCategoriaId(despesa.categoriaId)
+    setCategoryId(despesa.categoryId)
   }
 
   async function handleDeletar(id) {
     if (!window.confirm('Deseja deletar esta despesa?')) return
     try {
-      await api.delete(`/expenses/${id}`)
-      carregarDespesas()
-    } catch {
-      setErro('Erro ao deletar despesa')
+      await remover(id)
+      aplicarFiltros()
+    } catch (erro) {
+      setErro(extrairErro(erro, 'Erro ao deletar despesa'))
     }
   }
 
@@ -100,20 +97,12 @@ export default function Despesas() {
     setValor('')
     setData('')
     setStatus('PENDENTE')
-    setCategoriaId('')
+    setCategoryId('')
   }
 
   return (
     <div className="pagina">
-      <header className="cabecalho">
-        <h1>Despesas</h1>
-        <nav>
-          <a href="/dashboard">Dashboard</a>
-          <a href="/categorias">Categorias</a>
-          <a href="/despesas">Despesas</a>
-          <button onClick={logout}>Sair</button>
-        </nav>
-      </header>
+      <Navbar />
 
       <main className="conteudo">
         <div className="secao">
@@ -128,6 +117,7 @@ export default function Despesas() {
             <input
               type="number"
               placeholder="Valor"
+              step="0.01"
               value={valor}
               onChange={(e) => setValor(e.target.value)}
             />
@@ -140,16 +130,16 @@ export default function Despesas() {
               <option value="PENDENTE">Pendente</option>
               <option value="PAGA">Paga</option>
             </select>
-            <select value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)}>
+            <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
               <option value="">Selecione uma categoria</option>
               {categorias.map((cat) => (
-                <option key={cat.id} value={cat.id}>{cat.nome}</option>
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
             </select>
-            {erro && <p className="erro">{erro}</p>}
+            <ErrorMessage mensagem={erro} />
             <div className="botoes-form">
-              <button className="btn-salvar" onClick={handleSalvar}>
-                {editandoId ? 'Salvar alterações' : 'Adicionar'}
+              <button className="btn-salvar" onClick={handleSalvar} disabled={salvando}>
+                {salvando ? 'Salvando...' : editandoId ? 'Salvar alterações' : 'Adicionar'}
               </button>
               {editandoId && (
                 <button className="btn-cancelar" onClick={limparFormulario}>
@@ -163,76 +153,88 @@ export default function Despesas() {
         <div className="secao">
           <h3>Filtros</h3>
           <div className="filtros">
-            <select value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)}>
+            <select value={filtros.status} onChange={(e) => setFiltros({ ...filtros, status: e.target.value })}>
               <option value="">Todos os status</option>
               <option value="PENDENTE">Pendente</option>
               <option value="PAGA">Paga</option>
             </select>
-            <select value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)}>
+            <select value={filtros.categoryId} onChange={(e) => setFiltros({ ...filtros, categoryId: e.target.value })}>
               <option value="">Todas as categorias</option>
               {categorias.map((cat) => (
-                <option key={cat.id} value={cat.id}>{cat.nome}</option>
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
             </select>
             <input
               type="date"
-              value={filtroDataInicio}
-              onChange={(e) => setFiltroDataInicio(e.target.value)}
+              title="Data início"
+              value={filtros.dataInicio}
+              onChange={(e) => setFiltros({ ...filtros, dataInicio: e.target.value })}
             />
             <input
               type="date"
-              value={filtroDataFim}
-              onChange={(e) => setFiltroDataFim(e.target.value)}
+              title="Data fim"
+              value={filtros.dataFim}
+              onChange={(e) => setFiltros({ ...filtros, dataFim: e.target.value })}
             />
-            <button className="btn-salvar" onClick={carregarDespesas}>Filtrar</button>
-            <button className="btn-cancelar" onClick={() => {
-              setFiltroStatus('')
-              setFiltroCategoria('')
-              setFiltroDataInicio('')
-              setFiltroDataFim('')
-              setTimeout(carregarDespesas, 0)
-            }}>Limpar</button>
+            <input
+              type="number"
+              placeholder="Valor mín."
+              step="0.01"
+              value={filtros.valueMin}
+              onChange={(e) => setFiltros({ ...filtros, valueMin: e.target.value })}
+            />
+            <input
+              type="number"
+              placeholder="Valor máx."
+              step="0.01"
+              value={filtros.valueMax}
+              onChange={(e) => setFiltros({ ...filtros, valueMax: e.target.value })}
+            />
+            <button className="btn-salvar" onClick={aplicarFiltros}>Filtrar</button>
+            <button className="btn-cancelar" onClick={limparFiltros}>Limpar</button>
           </div>
         </div>
 
         <div className="secao">
           <h3>Lista de Despesas</h3>
           {carregando ? (
-            <p>Carregando...</p>
+            <Loading />
           ) : despesas.length === 0 ? (
             <p>Nenhuma despesa encontrada.</p>
           ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Descrição</th>
-                  <th>Valor</th>
-                  <th>Data</th>
-                  <th>Status</th>
-                  <th>Categoria</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {despesas.map((desp) => (
-                  <tr key={desp.id}>
-                    <td>{desp.descricao}</td>
-                    <td>R$ {Number(desp.valor).toFixed(2)}</td>
-                    <td>{desp.data}</td>
-                    <td>
-                      <span className={`badge ${desp.status === 'PAGA' ? 'badge-paga' : 'badge-pendente'}`}>
-                        {desp.status}
-                      </span>
-                    </td>
-                    <td>{desp.Category?.nome || '-'}</td>
-                    <td>
-                      <button className="btn-editar" onClick={() => handleEditar(desp)}>Editar</button>
-                      <button className="btn-deletar" onClick={() => handleDeletar(desp.id)}>Deletar</button>
-                    </td>
+            <div className="tabela-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Descrição</th>
+                    <th>Valor</th>
+                    <th>Data</th>
+                    <th>Status</th>
+                    <th>Categoria</th>
+                    <th>Ações</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {despesas.map((desp) => (
+                    <tr key={desp.id}>
+                      <td>{desp.description}</td>
+                      <td>R$ {Number(desp.value).toFixed(2)}</td>
+                      <td>{desp.date}</td>
+                      <td>
+                        <span className={`badge ${desp.status === 'PAGA' ? 'badge-paga' : 'badge-pendente'}`}>
+                          {desp.status}
+                        </span>
+                      </td>
+                      <td>{desp.Category?.name || '-'}</td>
+                      <td>
+                        <button className="btn-editar" onClick={() => handleEditar(desp)}>Editar</button>
+                        <button className="btn-deletar" onClick={() => handleDeletar(desp.id)}>Deletar</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </main>

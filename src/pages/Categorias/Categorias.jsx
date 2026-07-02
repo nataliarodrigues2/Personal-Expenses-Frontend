@@ -1,32 +1,17 @@
-import { useState, useEffect } from 'react'
-import { useAuth } from '../../contexts/AuthContext'
-import api from '../../services/api'
+import { useState } from 'react'
+import Navbar from '../../components/Navbar/Navbar'
+import Loading from '../../components/Loading/Loading'
+import ErrorMessage from '../../components/ErrorMessage/ErrorMessage'
+import { useCategorias } from '../../hooks/useCategorias'
 import '../Dashboard/Dashboard.css'
 import './Categorias.css'
 
 export default function Categorias() {
-  const { logout } = useAuth()
-  const [categorias, setCategorias] = useState([])
+  const { categorias, carregando, erro, setErro, criar, atualizar, remover, extrairErro } = useCategorias()
   const [nome, setNome] = useState('')
   const [descricao, setDescricao] = useState('')
   const [editandoId, setEditandoId] = useState(null)
-  const [carregando, setCarregando] = useState(true)
-  const [erro, setErro] = useState('')
-
-  useEffect(() => {
-    carregarCategorias()
-  }, [])
-
-  async function carregarCategorias() {
-    try {
-      const resposta = await api.get('/categories')
-      setCategorias(resposta.data)
-    } catch {
-      setErro('Erro ao carregar categorias')
-    } finally {
-      setCarregando(false)
-    }
-  }
+  const [salvando, setSalvando] = useState(false)
 
   async function handleSalvar() {
     if (!nome.trim()) {
@@ -34,34 +19,33 @@ export default function Categorias() {
       return
     }
     setErro('')
+    setSalvando(true)
     try {
       if (editandoId) {
-        await api.put(`/categories/${editandoId}`, { nome, descricao })
+        await atualizar(editandoId, nome, descricao)
       } else {
-        await api.post('/categories', { nome, descricao })
+        await criar(nome, descricao)
       }
-      setNome('')
-      setDescricao('')
-      setEditandoId(null)
-      carregarCategorias()
-    } catch {
-      setErro('Erro ao salvar categoria')
+      handleCancelar()
+    } catch (erro) {
+      setErro(extrairErro(erro, 'Erro ao salvar categoria'))
+    } finally {
+      setSalvando(false)
     }
   }
 
   function handleEditar(categoria) {
     setEditandoId(categoria.id)
-    setNome(categoria.nome)
-    setDescricao(categoria.descricao || '')
+    setNome(categoria.name)
+    setDescricao(categoria.description || '')
   }
 
   async function handleDeletar(id) {
     if (!window.confirm('Deseja deletar esta categoria?')) return
     try {
-      await api.delete(`/categories/${id}`)
-      carregarCategorias()
-    } catch {
-      setErro('Erro ao deletar categoria')
+      await remover(id)
+    } catch (erro) {
+      setErro(extrairErro(erro, 'Erro ao deletar categoria'))
     }
   }
 
@@ -74,15 +58,7 @@ export default function Categorias() {
 
   return (
     <div className="pagina">
-      <header className="cabecalho">
-        <h1>Categorias</h1>
-        <nav>
-          <a href="/dashboard">Dashboard</a>
-          <a href="/categorias">Categorias</a>
-          <a href="/despesas">Despesas</a>
-          <button onClick={logout}>Sair</button>
-        </nav>
-      </header>
+      <Navbar />
 
       <main className="conteudo">
         <div className="secao">
@@ -101,10 +77,10 @@ export default function Categorias() {
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
             />
-            {erro && <p className="erro">{erro}</p>}
+            <ErrorMessage mensagem={erro} />
             <div className="botoes-form">
-              <button className="btn-salvar" onClick={handleSalvar}>
-                {editandoId ? 'Salvar alterações' : 'Adicionar'}
+              <button className="btn-salvar" onClick={handleSalvar} disabled={salvando}>
+                {salvando ? 'Salvando...' : editandoId ? 'Salvar alterações' : 'Adicionar'}
               </button>
               {editandoId && (
                 <button className="btn-cancelar" onClick={handleCancelar}>
@@ -118,31 +94,33 @@ export default function Categorias() {
         <div className="secao">
           <h3>Lista de Categorias</h3>
           {carregando ? (
-            <p>Carregando...</p>
+            <Loading />
           ) : categorias.length === 0 ? (
             <p>Nenhuma categoria cadastrada.</p>
           ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Nome</th>
-                  <th>Descrição</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {categorias.map((cat) => (
-                  <tr key={cat.id}>
-                    <td>{cat.nome}</td>
-                    <td>{cat.descricao || '-'}</td>
-                    <td>
-                      <button className="btn-editar" onClick={() => handleEditar(cat)}>Editar</button>
-                      <button className="btn-deletar" onClick={() => handleDeletar(cat.id)}>Deletar</button>
-                    </td>
+            <div className="tabela-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>Descrição</th>
+                    <th>Ações</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {categorias.map((cat) => (
+                    <tr key={cat.id}>
+                      <td>{cat.name}</td>
+                      <td>{cat.description || '-'}</td>
+                      <td>
+                        <button className="btn-editar" onClick={() => handleEditar(cat)}>Editar</button>
+                        <button className="btn-deletar" onClick={() => handleDeletar(cat.id)}>Deletar</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </main>

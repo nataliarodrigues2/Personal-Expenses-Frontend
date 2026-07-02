@@ -1,14 +1,18 @@
-import { useState, useEffect } from 'react'
-import { useAuth } from '../../contexts/AuthContext'
+import { useEffect, useState } from 'react'
+import Navbar from '../../components/Navbar/Navbar'
+import Loading from '../../components/Loading/Loading'
+import ErrorMessage from '../../components/ErrorMessage/ErrorMessage'
 import api from '../../services/api'
+import { useDespesas } from '../../hooks/useDespesas'
 import './Dashboard.css'
 
 export default function Dashboard() {
-  const { logout } = useAuth()
+  const { despesas, buscar } = useDespesas()
   const [total, setTotal] = useState(null)
   const [quantidade, setQuantidade] = useState(null)
   const [porCategoria, setPorCategoria] = useState([])
   const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState('')
 
   useEffect(() => {
     async function carregarDados() {
@@ -16,35 +20,35 @@ export default function Dashboard() {
         const [resTotal, resQuantidade, resCategoria] = await Promise.all([
           api.get('/dashboard/total-expenses'),
           api.get('/dashboard/expenses-count'),
-          api.get('/dashboard/expenses-by-category')
+          api.get('/dashboard/expenses-by-category'),
+          buscar(),
         ])
         setTotal(resTotal.data.total)
-        setQuantidade(resQuantidade.data.quantidade)
+        setQuantidade(resQuantidade.data.amount)
         setPorCategoria(resCategoria.data)
       } catch {
-        console.error('Erro ao carregar dashboard')
+        setErro('Erro ao carregar dados do dashboard')
       } finally {
         setCarregando(false)
       }
     }
     carregarDados()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const ultimasDespesas = [...despesas]
+    .sort((a, b) => b.id - a.id)
+    .slice(0, 5)
 
   return (
     <div className="pagina">
-      <header className="cabecalho">
-        <h1>Dashboard</h1>
-        <nav>
-          <a href="/dashboard">Dashboard</a>
-          <a href="/categorias">Categorias</a>
-          <a href="/despesas">Despesas</a>
-          <button onClick={logout}>Sair</button>
-        </nav>
-      </header>
+      <Navbar />
 
       <main className="conteudo">
         {carregando ? (
-          <p>Carregando...</p>
+          <Loading />
+        ) : erro ? (
+          <ErrorMessage mensagem={erro} />
         ) : (
           <>
             <div className="cards">
@@ -63,22 +67,54 @@ export default function Dashboard() {
               {porCategoria.length === 0 ? (
                 <p>Nenhuma despesa cadastrada.</p>
               ) : (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Categoria</th>
-                      <th>Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {porCategoria.map((item) => (
-                      <tr key={item.categoriaId}>
-                        <td>{item.Category.nome}</td>
-                        <td>R$ {Number(item.total).toFixed(2)}</td>
+                <div className="tabela-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Categoria</th>
+                        <th>Total</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {porCategoria.map((item) => (
+                        <tr key={item.categoryId}>
+                          <td>{item.Category?.name}</td>
+                          <td>R$ {Number(item.total).toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div className="secao">
+              <h3>Últimas Despesas Cadastradas</h3>
+              {ultimasDespesas.length === 0 ? (
+                <p>Nenhuma despesa cadastrada.</p>
+              ) : (
+                <div className="tabela-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Descrição</th>
+                        <th>Valor</th>
+                        <th>Data</th>
+                        <th>Categoria</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ultimasDespesas.map((desp) => (
+                        <tr key={desp.id}>
+                          <td>{desp.description}</td>
+                          <td>R$ {Number(desp.value).toFixed(2)}</td>
+                          <td>{desp.date}</td>
+                          <td>{desp.Category?.name || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           </>

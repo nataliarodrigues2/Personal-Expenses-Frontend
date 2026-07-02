@@ -1,23 +1,39 @@
-import { createContext, useContext, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
+import { AuthContext } from './authContextInstance'
 
-const AuthContext = createContext()
+function lerUsuarioSalvo() {
+  try {
+    const dados = localStorage.getItem('usuario')
+    return dados ? JSON.parse(dados) : null
+  } catch {
+    return null
+  }
+}
 
 export function AuthProvider({ children }) {
-  const [usuario, setUsuario] = useState(null)
+  const [usuario, setUsuario] = useState(lerUsuarioSalvo)
   const navigate = useNavigate()
 
   async function login(email, senha) {
-    const resposta = await api.post('/auth/login', { email, senha })
+    const resposta = await api.post('/auth/login', { email, password: senha })
     const { token } = resposta.data
+    const dadosUsuario = { email }
     localStorage.setItem('token', token)
-    setUsuario({ email })
+    localStorage.setItem('usuario', JSON.stringify(dadosUsuario))
+    setUsuario(dadosUsuario)
     navigate('/dashboard')
+  }
+
+  async function registrar(nome, email, senha) {
+    await api.post('/users', { name: nome, email, password: senha })
+    await login(email, senha)
   }
 
   function logout() {
     localStorage.removeItem('token')
+    localStorage.removeItem('usuario')
     setUsuario(null)
     navigate('/login')
   }
@@ -27,12 +43,8 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ usuario, login, logout, estaLogado }}>
+    <AuthContext.Provider value={{ usuario, login, registrar, logout, estaLogado }}>
       {children}
     </AuthContext.Provider>
   )
-}
-
-export function useAuth() {
-  return useContext(AuthContext)
 }
