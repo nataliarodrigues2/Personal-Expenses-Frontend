@@ -34,5 +34,12 @@ export function useDespesas() {
     await api.delete(`/expenses/${id}`)
   }
 
-  return { despesas, carregando, erro, setErro, buscar, criar, atualizar, remover, extrairErro }
+  async function enviarComprovante(arquivo) {
+    const formData = new FormData()
+    formData.append('file', arquivo)
+    const resposta = await api.post('/expenses/upload', formData)
+    return resposta.data
+  }
+
+  return { despesas, carregando, erro, setErro, buscar, criar, atualizar, remover, enviarComprovante, extrairErro }
 }

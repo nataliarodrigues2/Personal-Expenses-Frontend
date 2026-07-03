@@ -27,13 +27,13 @@ export function useCategorias() {
     carregar()
   }, [])
 
-  async function criar(name, description) {
-    await api.post('/categories', { name, description })
+  async function criar(name, description, color) {
+    await api.post('/categories', { name, description, color })
     await carregar()
   }
 
-  async function atualizar(id, name, description) {
-    await api.put(`/categories/${id}`, { name, description })
+  async function atualizar(id, name, description, color) {
+    await api.put(`/categories/${id}`, { name, description, color })
     await carregar()
   }
 

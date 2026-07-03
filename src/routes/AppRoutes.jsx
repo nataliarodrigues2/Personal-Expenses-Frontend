@@ -6,6 +6,7 @@ import Register from '../pages/Register/Register'
 import Dashboard from '../pages/Dashboard/Dashboard'
 import Categorias from '../pages/Categorias/Categorias'
 import Despesas from '../pages/Despesas/Despesas'
+import Estatisticas from '../pages/Estatisticas/Estatisticas'
 
 function RotaProtegida({ children }) {
   const { estaLogado } = useAuth()
@@ -20,6 +21,7 @@ export default function AppRoutes() {
       <Route path="/dashboard" element={<RotaProtegida><Dashboard /></RotaProtegida>} />
       <Route path="/categorias" element={<RotaProtegida><Categorias /></RotaProtegida>} />
       <Route path="/despesas" element={<RotaProtegida><Despesas /></RotaProtegida>} />
+      <Route path="/estatisticas" element={<RotaProtegida><Estatisticas /></RotaProtegida>} />
       <Route path="*" element={<Navigate to="/login" />} />
     </Routes>
   )

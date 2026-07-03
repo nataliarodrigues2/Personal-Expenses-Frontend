@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg: #eef0f4;
+  --color-canvas: #e7e9ef;
+  --color-surface: #ffffff;
+  --color-surface-2: #f4f6f9;
+  --color-surface-3: #eceef3;
+
+  --color-border: #e6e8ee;
+  --color-border-strong: #d6d9e1;
+  --color-hairline: #eef0f4;
+
+  --color-text: #12141a;
+  --color-text-2: #565c68;
+  --color-text-3: #8b909e;
+
+  --color-primary: #5b5bd6;
+  --color-primary-hover: #4a4ac4;
+  --color-primary-soft: #eeeefb;
+  --color-primary-border: #d3d3f6;
+  --color-ring: rgba(91, 91, 214, 0.38);
+
+  --color-success: #0e9f6e;
+  --color-success-soft: #e6f6ef;
+  --color-success-border: #bfe6d4;
+
+  --color-warning: #c98a12;
+  --color-warning-soft: #fbf1dd;
+  --color-warning-border: #eed9a8;
+
+  --color-danger: #e5484d;
+  --color-danger-soft: #fcebeb;
+  --color-danger-border: #f4c9c9;
+
+  --color-info: #2f74d0;
+  --color-info-soft: #e8f0fb;
+  --color-info-border: #c4d8f3;
+
+  --shadow-sm: 0 1px 2px rgba(18, 20, 26, 0.06);
+  --shadow: 0 6px 22px -8px rgba(18, 20, 26, 0.14);
+  --shadow-lg: 0 24px 60px -14px rgba(18, 20, 26, 0.26);
+}
+
+.dark {
+  --color-bg: #0a0c11;
+  --color-canvas: #070810;
+  --color-surface: #12151c;
+  --color-surface-2: #181c24;
+  --color-surface-3: #20242e;
+
+  --color-border: #242a35;
+  --color-border-strong: #333a48;
+  --color-hairline: #1a1e27;
+
+  --color-text: #eef1f6;
+  --color-text-2: #a1a8b7;
+  --color-text-3: #6c7484;
+
+  --color-primary: #8b8bf0;
+  --color-primary-hover: #9a9af5;
+  --color-primary-soft: #1c1c33;
+  --color-primary-border: #34346c;
+  --color-ring: rgba(139, 139, 240, 0.4);
+
+  --color-success: #37cf8f;
+  --color-success-soft: #0f2820;
+  --color-success-border: #1e4636;
+
+  --color-warning: #e0a63c;
+  --color-warning-soft: #2a2113;
+  --color-warning-border: #4a3a1a;
+
+  --color-danger: #ff5f66;
+  --color-danger-soft: #2c1517;
+  --color-danger-border: #502226;
+
+  --color-info: #5aa0e8;
+  --color-info-soft: #0f2131;
+  --color-info-border: #1e3a55;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow: 0 10px 28px -10px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 28px 64px -14px rgba(0, 0, 0, 0.72);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: theme('fontFamily.sans');
+  color: var(--color-text);
+  background: var(--color-canvas);
+}
+
+a {
+  color: inherit;
+}
